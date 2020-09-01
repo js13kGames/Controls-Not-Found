@@ -1,0 +1,27 @@
+{
+  "name": "js13k2020",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rm -rf ./dist",
+    "copy-files": "cp index.html ./dist/index.html",
+    "compress": "rollup -c",
+    "zip": "npm run build && zip -r dist/game.zip dist",
+    "watch": "rollup -c --watch",
+    "build": "npm run clean && npm run compress && npm run copy-files",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "kontra": "^7.0.0",
+    "rollup-plugin-uglify": "^6.0.4",
+    "save-dev": "0.0.1-security"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^9.0.0",
+    "rollup": "^2.26.5",
+    "rollup-plugin-terser": "^7.0.0"
+  }
+}

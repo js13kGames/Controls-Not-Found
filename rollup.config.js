@@ -6,6 +6,7 @@ export default {
     output: {
       file: './dist/bundle.js',
       format: 'iife',
+      sourcemap: true
     //   strict: false
     },
     plugins: [nodeResolve(), terser()],

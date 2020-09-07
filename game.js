@@ -11,33 +11,38 @@ import {
   keyMap,
   getStoreItem,
   setStoreItem,
+  randInt,
+  load,
+  imageAssets,
+  degToRad
 } from "kontra";
 
-import { textOptions, getRandomLetter } from "./utils.js";
+import { textOptions, getRandomLetter, getRandomTunnelColor } from "./utils.js";
 
 const currentKeysDefault = { up: "w", down: "s", count: 100 };
-function main() {
+async function main() {
   let { canvas } = init();
-
   let currentGameState = "menu"; // menu, started, ended
 
-  let currentTunnelWidth = 300;
+  let currentTunnelWidth = 500;
   let currentTunnelY = canvas.height / 2;
-  let currentKeys = currentKeysDefault;
+  let currentKeys = {...currentKeysDefault};
   let tunnelBits = [];
+  let rocks = [];
   let score = 0;
 
+  await load('assets/ship2.png')
+
   function resetGame() {
-    currentTunnelWidth = 300;
+    currentTunnelWidth = 500;
     currentTunnelY = canvas.height / 2;
-    currentKeys = currentKeysDefault;
+    currentKeys = {...currentKeysDefault};
+    console.log({currentKeys})
     tunnelBits = [];
+    rocks = [];
     score = 0;
     createTunnelBitTopBottom(currentTunnelWidth, currentTunnelY);
-  }
-
-  if(!getStoreItem('score')){
-    setStoreItem('score', 1)
+    currentGameState = "menu";
   }
 
   let help = Text({
@@ -53,8 +58,13 @@ function main() {
     ...textOptions,
   });
 
-  let lastScore = Text({
+  let highScore = Text({
     text: "Highest Score: 0",
+    ...textOptions,
+  });
+
+  let lastScore = Text({
+    text: "Last Score: 0",
     ...textOptions,
   });
 
@@ -62,14 +72,9 @@ function main() {
     x: canvas.width / 2,
     y: canvas.height / 2,
     anchor: { x: 0.5, y: 0.5 },
-
-    // add 15 pixels of space between each row
     rowGap: 15,
-
-    // center the children
     justify: "center",
-
-    children: [start, help, lastScore],
+    children: [start, help, highScore, lastScore],
   });
 
   let menuScene = Scene({
@@ -80,41 +85,66 @@ function main() {
     children: [menu],
   });
 
-  function createTunnelBit(y) {
+  function createRandomRock(y) {
+    let rock = Sprite({
+      x: canvas.width,
+      y: y,
+      dx: -2,
+      color: getRandomTunnelColor(),
+      height: 20,
+      width: 20,
+      anchor: { x: 0.5, y: 0.5 },
+    });
+    rocks.push(rock);
+  }
+
+
+  function createTunnelBit(y, top) {
     let tunnelBit = Sprite({
       x: canvas.width,
       y,
       dx: -2,
-      color: "red",
-      height: 40,
+      color: getRandomTunnelColor(),
+      height: canvas.height/2,
       width: 2,
+      anchor: { x: 0.5, y: top?0:1 },
     });
     tunnelBits.push(tunnelBit);
   }
 
   function createTunnelBitTopBottom(width, y) {
     // top
-    createTunnelBit(y - width / 2);
+    createTunnelBit(y+width/2, true);
     // bottom
-    createTunnelBit(y + width / 2);
+    createTunnelBit(y - width / 2, false);
   }
 
   let ship = Sprite({
     x: canvas.width / 4,
     y: canvas.height / 2,
-    color: "blue",
+    // color: "blue",
     width: 50,
-    height: 50,
+    height: 20,
     anchor: { x: 0, y: 0.5 },
-    // dx: 2
+    image: imageAssets['assets/ship2.png']
   });
 
   let upKeyText = Text({
     text: currentKeys.up.toUpperCase(),
     ...textOptions,
     x: 40,
-    y: canvas.height - 100,
-    anchor: { x: 0, y: 0.5 },
+    y: canvas.height - 80,
+    anchor: { x: 0.5, y: 0.5 },
+    textAlign: "center",
+  });
+
+  let upKeyIcon = Text({
+    text: '↑',
+    ...textOptions,
+    font: "25px Arial, sans-serif",
+    x: 40,
+    y: canvas.height - 60,
+    anchor: { x: 0.5, y: 0.5 },
     textAlign: "center",
   });
 
@@ -122,8 +152,18 @@ function main() {
     text: currentKeys.down.toUpperCase(),
     ...textOptions,
     x: 40,
-    y: canvas.height - 20,
-    anchor: { x: 0, y: 0.5 },
+    y: canvas.height - 15,
+    anchor: { x: 0.5, y: 0.5 },
+    textAlign: "center",
+  });
+
+  let downKeyIcon = Text({
+    text: '↓',
+    ...textOptions,
+    font: "25px Arial, sans-serif",
+    x: 40,
+    y: canvas.height - 40,
+    anchor: { x: 0.5, y: 0.5 },
     textAlign: "center",
   });
 
@@ -147,7 +187,7 @@ function main() {
 
   let controls = Scene({
     id: "display",
-    children: [upKeyText, downKeyText, errorText],
+    children: [upKeyText, downKeyText, errorText, upKeyIcon, downKeyIcon],
     update: function() {
       // console.log('jello')
     },
@@ -164,25 +204,26 @@ function main() {
     update: function() {
       // update the game state
       if (currentGameState === "menu") {
-        lastScore.text = `Highest Score: ${getStoreItem('score')?getStoreItem('score'):0}`
+        highScore.text = `Highest Score: ${getStoreItem('score')?getStoreItem('score'):0}`
+        lastScore.text = `Last Score: ${getStoreItem('lastscore')?getStoreItem('lastscore'):0}`
       }
 
       if (keyPressed("space") && currentGameState === "menu") {
+        ship.y = canvas.height/2
         currentGameState = "started";
+        return;
       }
 
-      // TODO: move out into own function I think
+      // TODO: move out into own scenes
       if (currentGameState === "started") {
-        // console.log(currentKeys.count)
         upKeyText.text = currentKeys.up.toUpperCase();
         downKeyText.text = currentKeys.down.toUpperCase();
-        // console.log(currentKeys.up)
 
         errorText.text = "";
         if (keyPressed(currentKeys.up)) {
-          ship.y = ship.y - 10;
+          ship.y = ship.y - 5;
         } else if (keyPressed(currentKeys.down)) {
-          ship.y = ship.y + 10;
+          ship.y = ship.y + 5;
         } else {
           Object.values(keyMap)
             .filter((a) => a !== currentKeys.down || a !== currentKeys.up)
@@ -198,30 +239,48 @@ function main() {
         if (currentKeys.count < 0) {
           currentKeys.count = 100;
           currentKeys.up = getRandomLetter();
-          // cannot have same
+          // cannot have same or w and s
           currentKeys.down = getRandomLetter();
-          while (currentKeys.down === currentKeys.up) {
+          while (currentKeys.down === currentKeys.up && (currentKeys.down!=='s' || currentKeys.up !=='w')) {
             currentKeys.down = getRandomLetter();
           }
         }
 
         score += 0.2;
+        
 
         // remove the tunnel bits outside view
         tunnelBits = tunnelBits.filter((sprite) => sprite.x >= 0);
+        let crash = 0;
         tunnelBits.map((sprite) => {
           sprite.update();
           if (collides(ship, sprite)) {
-            // crash
-            // score = 0;
-            if(getStoreItem('score') && getStoreItem('score')<score){
-              console.log('set score', score)
-              setStoreItem('score', parseInt(score))
-            }
-            resetGame();
-            currentGameState = "menu";
+            crash++
           }
         });
+
+        // rocks
+        rocks = rocks.filter((sprite) => sprite.x >= 0);
+        rocks.map((sprite) => {
+          sprite.update();
+          if (collides(ship, sprite)) {
+            crash++
+          }
+        });
+
+        if(randInt(0,100)>98){
+          createRandomRock(currentTunnelY+randInt(-currentTunnelWidth/2,currentTunnelWidth/2))
+        }
+
+
+        if(crash>0){
+            if(getStoreItem('score') && getStoreItem('score')<score){
+              setStoreItem('score', parseInt(score))
+            }
+            setStoreItem('lastscore', parseInt(score))
+            resetGame();
+            return;
+        }
 
         // check if I should make more bits
         if (
@@ -232,9 +291,18 @@ function main() {
           createTunnelBitTopBottom(currentTunnelWidth, currentTunnelY);
         }
 
-        const frequencyParam = 0.1;
-        currentTunnelY += Math.sin(frequencyParam * score);
-        currentTunnelWidth -= 0.1
+        let frequencyParam = 0.1
+        if(randInt(0,100)>50){
+          frequencyParam = randInt(0,10)/10
+        }
+        // randInt(0,100)/50;
+        // minus to go up
+        currentTunnelY -=  Math.sin(frequencyParam * score);
+        currentTunnelWidth -= 0.08
+        if(currentTunnelWidth<0){
+          currentTunnelWidth=0
+        }
+
 
         scoreText.text = `Score: ${parseInt(score)}`;
 
@@ -249,7 +317,7 @@ function main() {
       }
       if (currentGameState === "started") {
         tunnelBits.map((sprite) => sprite.render());
-
+        rocks.map((sprite) => sprite.render());
         ship.render();
         controls.render();
         scoreText.render();
@@ -264,4 +332,19 @@ function main() {
   loop.start(); // start the game
 }
 
+
+// function start(){
+// load(
+//   ['assets/ship.png']
+// ).then(function(assets) {
+//   console.log('loaded')
+//   main();
+// }).catch(function(err) {
+//   console.log('error loading assets')
+// });
+// }
+
 main();
+
+
+// start();

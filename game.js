@@ -14,7 +14,8 @@ import {
   randInt,
   load,
   imageAssets,
-  degToRad
+  SpriteSheet,
+  audioAssets,
 } from "kontra";
 
 import { textOptions, getRandomLetter, getRandomTunnelColor } from "./utils.js";
@@ -26,24 +27,35 @@ async function main() {
 
   let currentTunnelWidth = 500;
   let currentTunnelY = canvas.height / 2;
-  let currentKeys = {...currentKeysDefault};
+  let currentKeys = { ...currentKeysDefault };
   let tunnelBits = [];
   let rocks = [];
   let score = 0;
 
-  await load('assets/ship2.png')
+  await load(
+    "assets/ship2.png",
+    "assets/explosion.wav",
+    "assets/change.wav",
+    "assets/ship-sprite.png"
+  );
 
   function resetGame() {
     currentTunnelWidth = 500;
     currentTunnelY = canvas.height / 2;
-    currentKeys = {...currentKeysDefault};
-    console.log({currentKeys})
+    currentKeys = { ...currentKeysDefault };
     tunnelBits = [];
     rocks = [];
     score = 0;
     createTunnelBitTopBottom(currentTunnelWidth, currentTunnelY);
     currentGameState = "menu";
   }
+
+  let logo = Sprite({
+    width: 50,
+    height: 20,
+    anchor: { x: 0.5, y: 0.5 },
+    image: imageAssets["assets/ship2.png"],
+  });
 
   let help = Text({
     text:
@@ -74,7 +86,7 @@ async function main() {
     anchor: { x: 0.5, y: 0.5 },
     rowGap: 15,
     justify: "center",
-    children: [start, help, highScore, lastScore],
+    children: [logo, start, help, highScore, lastScore],
   });
 
   let menuScene = Scene({
@@ -98,26 +110,37 @@ async function main() {
     rocks.push(rock);
   }
 
-
   function createTunnelBit(y, top) {
     let tunnelBit = Sprite({
       x: canvas.width,
       y,
       dx: -2,
       color: getRandomTunnelColor(),
-      height: canvas.height/2,
+      height: canvas.height / 2,
       width: 2,
-      anchor: { x: 0.5, y: top?0:1 },
+      anchor: { x: 0.5, y: top ? 0 : 1 },
     });
     tunnelBits.push(tunnelBit);
   }
 
   function createTunnelBitTopBottom(width, y) {
     // top
-    createTunnelBit(y+width/2, true);
+    createTunnelBit(y + width / 2, true);
     // bottom
     createTunnelBit(y - width / 2, false);
   }
+
+  let spriteSheet = SpriteSheet({
+    image: imageAssets["assets/ship-sprite.png"],
+    frameWidth: 50,
+    frameHeight: 20,
+    animations: {
+      walk: {
+        frames: "0..3",
+        frameRate: 30,
+      },
+    },
+  });
 
   let ship = Sprite({
     x: canvas.width / 4,
@@ -126,7 +149,8 @@ async function main() {
     width: 50,
     height: 20,
     anchor: { x: 0, y: 0.5 },
-    image: imageAssets['assets/ship2.png']
+    // image: imageAssets['assets/ship2.png'],
+    animations: spriteSheet.animations,
   });
 
   let upKeyText = Text({
@@ -139,7 +163,7 @@ async function main() {
   });
 
   let upKeyIcon = Text({
-    text: '↑',
+    text: "↑",
     ...textOptions,
     font: "25px Arial, sans-serif",
     x: 40,
@@ -158,7 +182,7 @@ async function main() {
   });
 
   let downKeyIcon = Text({
-    text: '↓',
+    text: "↓",
     ...textOptions,
     font: "25px Arial, sans-serif",
     x: 40,
@@ -204,12 +228,16 @@ async function main() {
     update: function() {
       // update the game state
       if (currentGameState === "menu") {
-        highScore.text = `Highest Score: ${getStoreItem('score')?getStoreItem('score'):0}`
-        lastScore.text = `Last Score: ${getStoreItem('lastscore')?getStoreItem('lastscore'):0}`
+        highScore.text = `Highest Score: ${
+          getStoreItem("score") ? getStoreItem("score") : 0
+        }`;
+        lastScore.text = `Last Score: ${
+          getStoreItem("lastscore") ? getStoreItem("lastscore") : 0
+        }`;
       }
 
       if (keyPressed("space") && currentGameState === "menu") {
-        ship.y = canvas.height/2
+        ship.y = canvas.height / 2;
         currentGameState = "started";
         return;
       }
@@ -228,7 +256,8 @@ async function main() {
           Object.values(keyMap)
             .filter((a) => a !== currentKeys.down || a !== currentKeys.up)
             .forEach((a) => {
-              if (keyPressed(a)) {
+              if (keyPressed(a) && a !== "space") {
+                audioAssets["assets/change.wav"].play();
                 errorText.text = "CONTROL NOT FOUND";
               }
             });
@@ -241,13 +270,15 @@ async function main() {
           currentKeys.up = getRandomLetter();
           // cannot have same or w and s
           currentKeys.down = getRandomLetter();
-          while (currentKeys.down === currentKeys.up && (currentKeys.down!=='s' || currentKeys.up !=='w')) {
+          while (
+            currentKeys.down === currentKeys.up &&
+            (currentKeys.down !== "s" || currentKeys.up !== "w")
+          ) {
             currentKeys.down = getRandomLetter();
           }
         }
 
         score += 0.2;
-        
 
         // remove the tunnel bits outside view
         tunnelBits = tunnelBits.filter((sprite) => sprite.x >= 0);
@@ -255,7 +286,7 @@ async function main() {
         tunnelBits.map((sprite) => {
           sprite.update();
           if (collides(ship, sprite)) {
-            crash++
+            crash++;
           }
         });
 
@@ -264,22 +295,25 @@ async function main() {
         rocks.map((sprite) => {
           sprite.update();
           if (collides(ship, sprite)) {
-            crash++
+            crash++;
           }
         });
 
-        if(randInt(0,100)>98){
-          createRandomRock(currentTunnelY+randInt(-currentTunnelWidth/2,currentTunnelWidth/2))
+        if (randInt(0, 100) > 98) {
+          createRandomRock(
+            currentTunnelY +
+              randInt(-currentTunnelWidth / 2, currentTunnelWidth / 2)
+          );
         }
 
-
-        if(crash>0){
-            if(getStoreItem('score') && getStoreItem('score')<score){
-              setStoreItem('score', parseInt(score))
-            }
-            setStoreItem('lastscore', parseInt(score))
-            resetGame();
-            return;
+        if (crash > 0) {
+          audioAssets["assets/explosion.wav"].play();
+          if (getStoreItem("score") && getStoreItem("score") < score) {
+            setStoreItem("score", parseInt(score));
+          }
+          setStoreItem("lastscore", parseInt(score));
+          resetGame();
+          return;
         }
 
         // check if I should make more bits
@@ -287,22 +321,19 @@ async function main() {
           tunnelBits.filter((sprite) => canvas.width - sprite.width <= sprite.x)
             .length > 0
         ) {
-          // createTunnelBit(canvas.height/4)
           createTunnelBitTopBottom(currentTunnelWidth, currentTunnelY);
         }
 
-        let frequencyParam = 0.1
-        if(randInt(0,100)>50){
-          frequencyParam = randInt(0,10)/10
+        let frequencyParam = 0.1;
+        if (randInt(0, 100) > 50) {
+          frequencyParam = randInt(0, 10) / 10;
         }
-        // randInt(0,100)/50;
         // minus to go up
-        currentTunnelY -=  Math.sin(frequencyParam * score);
-        currentTunnelWidth -= 0.08
-        if(currentTunnelWidth<0){
-          currentTunnelWidth=0
+        currentTunnelY -= Math.sin(frequencyParam * score);
+        currentTunnelWidth -= 0.08;
+        if (currentTunnelWidth < 0) {
+          currentTunnelWidth = 0;
         }
-
 
         scoreText.text = `Score: ${parseInt(score)}`;
 
@@ -332,19 +363,4 @@ async function main() {
   loop.start(); // start the game
 }
 
-
-// function start(){
-// load(
-//   ['assets/ship.png']
-// ).then(function(assets) {
-//   console.log('loaded')
-//   main();
-// }).catch(function(err) {
-//   console.log('error loading assets')
-// });
-// }
-
 main();
-
-
-// start();

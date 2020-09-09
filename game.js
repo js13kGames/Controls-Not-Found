@@ -31,9 +31,9 @@ async function main() {
   let tunnelBits = [];
   let rocks = [];
   let score = 0;
+  const tunnelBitWidth = 10;
 
   await load(
-    "assets/ship2.png",
     "assets/explosion.wav",
     "assets/change.wav",
     "assets/ship-sprite.png"
@@ -50,11 +50,23 @@ async function main() {
     currentGameState = "menu";
   }
 
+  let spriteSheet = SpriteSheet({
+    image: imageAssets["assets/ship-sprite.png"],
+    frameWidth: 50,
+    frameHeight: 20,
+    animations: {
+      walk: {
+        frames: "0..3",
+        frameRate: 30,
+      },
+    },
+  });
+
   let logo = Sprite({
     width: 50,
     height: 20,
     anchor: { x: 0.5, y: 0.5 },
-    image: imageAssets["assets/ship2.png"],
+    animations: spriteSheet.animations,
   });
 
   let help = Text({
@@ -116,8 +128,8 @@ async function main() {
       y,
       dx: -2,
       color: getRandomTunnelColor(),
-      height: canvas.height / 2,
-      width: 2,
+      height: canvas.height - y,
+      width: tunnelBitWidth,
       anchor: { x: 0.5, y: top ? 0 : 1 },
     });
     tunnelBits.push(tunnelBit);
@@ -129,18 +141,6 @@ async function main() {
     // bottom
     createTunnelBit(y - width / 2, false);
   }
-
-  let spriteSheet = SpriteSheet({
-    image: imageAssets["assets/ship-sprite.png"],
-    frameWidth: 50,
-    frameHeight: 20,
-    animations: {
-      walk: {
-        frames: "0..3",
-        frameRate: 30,
-      },
-    },
-  });
 
   let ship = Sprite({
     x: canvas.width / 4,
@@ -212,9 +212,6 @@ async function main() {
   let controls = Scene({
     id: "display",
     children: [upKeyText, downKeyText, errorText, upKeyIcon, downKeyIcon],
-    update: function() {
-      // console.log('jello')
-    },
   });
 
   initKeys();
@@ -318,8 +315,7 @@ async function main() {
 
         // check if I should make more bits
         if (
-          tunnelBits.filter((sprite) => canvas.width - sprite.width <= sprite.x)
-            .length > 0
+          tunnelBits[tunnelBits.length-1] && tunnelBits[tunnelBits.length-1].x <= canvas.width-tunnelBitWidth //tunnelBitWidth//< canvas.width/tunnelBitWidth
         ) {
           createTunnelBitTopBottom(currentTunnelWidth, currentTunnelY);
         }
@@ -337,7 +333,6 @@ async function main() {
 
         scoreText.text = `Score: ${parseInt(score)}`;
 
-        controls.update();
         ship.update();
       }
     },
@@ -353,10 +348,6 @@ async function main() {
         controls.render();
         scoreText.render();
       }
-
-      if (currentGameState === "ended") {
-      }
-      // console.log(tunnelBits.length)
     },
   });
 

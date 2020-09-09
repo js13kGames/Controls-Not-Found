@@ -1,13 +1,21 @@
 # JS 13kb Entry 2020
 
-# WIP
+Entry for [Js13kGames](https://js13kgames.com/) theme: 404 not found
 
-## Theme: 404 not found
+Demo: [demo](https://runningdeveloper.github.io/js13k2020/)
 
-## My idea - Brain not found
+# Controls NOT FOUND
+
+## My idea - Controls not found
 
 The control panel for the ship is busted so up and down get swapped to different keys on the keyboard randomly.
 
-Simple tunnel type game aim to move through it without touching the sides. Maybe can increase speed as you progress.
+Simple tunnel type game aim to move through it without touching the sides or rocks in the way. Tunnel gets smaller as you progress.
 
-The challenge will be the up and down changing keys all the time. Might be dumb though.
+Not made for mobile, need the keyboard.
+
+Probably many bugs
+
+## Screenshot
+
+![screenshot](screen1.jpg)

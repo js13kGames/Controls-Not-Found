@@ -305,7 +305,7 @@ async function main() {
 
         if (crash > 0) {
           audioAssets["assets/explosion.wav"].play();
-          if (getStoreItem("score") && getStoreItem("score") < score) {
+          if (!getStoreItem("score") || getStoreItem("score") < score) {
             setStoreItem("score", parseInt(score));
           }
           setStoreItem("lastscore", parseInt(score));
@@ -315,7 +315,8 @@ async function main() {
 
         // check if I should make more bits
         if (
-          tunnelBits[tunnelBits.length-1] && tunnelBits[tunnelBits.length-1].x <= canvas.width-tunnelBitWidth //tunnelBitWidth//< canvas.width/tunnelBitWidth
+          tunnelBits[tunnelBits.length - 1] &&
+          tunnelBits[tunnelBits.length - 1].x <= canvas.width - tunnelBitWidth //tunnelBitWidth//< canvas.width/tunnelBitWidth
         ) {
           createTunnelBitTopBottom(currentTunnelWidth, currentTunnelY);
         }

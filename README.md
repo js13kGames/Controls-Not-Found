@@ -8,13 +8,15 @@ Demo: [demo](https://runningdeveloper.github.io/js13k2020/)
 
 ## My idea - Controls not found
 
-The control panel for the ship is busted so up and down get swapped to different keys on the keyboard randomly.
+The control panel of the ship is busted so up and down get swapped to different keys on the keyboard randomly.
 
-Simple tunnel type game aim to move through it without touching the sides or rocks in the way. Tunnel gets smaller as you progress.
+A simple tunnel type game where the aim is to move through it without touching the sides or rocks in the way. The tunnel gets smaller as you progress.
 
-Not made for mobile, need the keyboard.
+Not made for mobile, you need the keyboard.
 
-Probably many bugs
+Keys: Initially use W and S for up and down. As the game progresses, it will change the keys for up and down.
+
+Probably many bugs and it's not very exciting but I got something done, yay!
 
 ## Screenshot
 
